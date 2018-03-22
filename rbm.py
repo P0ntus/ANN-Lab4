@@ -45,6 +45,8 @@ cls += [ int(row[0]) for row in reader]
 trn_f.close()
 
 
+# Use pics for pictures and cls for the targeted classification
+
 # ----- DATA READY -----
 
 
