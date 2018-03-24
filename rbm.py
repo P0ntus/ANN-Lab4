@@ -21,6 +21,7 @@ class picture:
 	""" Class to handle automatically the plot management.
 	By using the defined classes you can automatically add vectors the general plot.
 	Create multiple instances to have multiple plot frames
+	NOT TESTED YET
 	"""
 
 	def __init__(self, x_dim, y_dim, total) :
