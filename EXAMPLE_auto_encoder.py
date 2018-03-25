@@ -20,11 +20,10 @@ import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 batch_x, _ = mnist.train.next_batch(256)
-print(_.shape)
-'''
+
 # Training Parameters
 learning_rate = 0.01
-num_steps = 30000
+num_steps = 10
 batch_size = 256
 
 display_step = 1000
@@ -138,4 +137,3 @@ with tf.Session() as sess:
     plt.figure(figsize=(n, n))
     plt.imshow(canvas_recon, origin="upper", cmap="gray")
 plt.show()
-'''
