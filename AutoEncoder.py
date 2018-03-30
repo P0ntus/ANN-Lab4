@@ -98,20 +98,20 @@ test_target = np.array(test_target)
 
 # Training Parameters
 learning_rate = 0.1
-num_steps = 500
+num_steps = 1000
 #batch_size = 256
 
 display_step = 50
 
 # Network Parameters
-num_hidden_1 = 10 #256 # 1st layer num features
+num_hidden_1 = 100 #256 # 1st layer num features
 num_hidden_2 = 5 #128 # 2nd layer num features (the latent dim)
 num_input = 784 # MNIST data input (img shape: 28*28)
 
 # tf Graph input (only pictures)
 X = tf.placeholder("float", [None, num_input])
 
-'''
+
 # ----- SINGLE LAYER START -----
 
 weights = {
@@ -149,7 +149,7 @@ weights = {
 
 biases = {
 	'encoder_b1': tf.Variable([float(0)]*num_hidden_1),
-	'encoder_b2': tf.Variable([float(0)]*num_hidden_2),
+	'encoder_b2': tf.Variabgradient desle([float(0)]*num_hidden_2),
 	'decoder_b1': tf.Variable([float(0)]*num_hidden_1),
 	'decoder_b2': tf.Variable([float(0)]*num_input),
 }
@@ -172,7 +172,7 @@ def decoder(x):
 
 
 # ----- MULTI LAYER END -----
-
+'''
 # Construct model
 encoder_op = encoder(X)
 decoder_op = decoder(encoder_op)
@@ -186,9 +186,9 @@ y_true = X
 
 loss = tf.reduce_mean(abs(y_true - y_pred))
 
-L1 = [tf.trainable_variables()[1]]
-opt_L1 = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, var_list = L1)
-print(L1)
+#L1 = [tf.trainable_variables()[1]]
+#opt_L1 = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, var_list = L1)
+
 optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 #optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
 
@@ -205,13 +205,13 @@ with tf.Session() as sess:
 	
 	for v in tf.trainable_variables(): # Print all tf variables
 		print(v)
-	print(tf.trainable_variables()[1].eval(sess)) # Get session variable	
-	print(tf.trainable_variables()[2].eval(sess))
+	#print(tf.trainable_variables()[1].eval(sess)) # Get session variable	
+	#print(tf.trainable_variables()[2].eval(sess))
 	
 	# Training
 	for i in range(1, num_steps+1):
 		# Run optimization op (backprop) and cost op (to get loss value)
-		training_target, l = sess.run([opt_L1, loss], feed_dict={X: training_input})
+		training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
 		# Display logs per step
 		if i % display_step == 0 or i == 1:
 			print('Step %i: Loss: %f' % (i, l))
@@ -224,8 +224,8 @@ with tf.Session() as sess:
 			print("Total error:: ", error, "Average error:", error/len(training_input), "Average error (between 1-0):", error/(len(training_input)*784))
 			'''
 			
-	print(tf.trainable_variables()[1].eval(sess)) # Get session variable	
-	print(tf.trainable_variables()[2].eval(sess))
+	#print(tf.trainable_variables()[1].eval(sess)) # Get session variable	
+	#print(tf.trainable_variables()[2].eval(sess))
 			
 	# Testing
 	# Encode and decode images from test set and visualize their reconstruction.
@@ -253,7 +253,7 @@ with tf.Session() as sess:
 
 	weights = tf.trainable_variables()[1].eval(sess) # Get session variable	
 	
-'''
+
 print("Original Images")
 plt.figure(figsize=(rows, columns))
 plt.imshow(canvas_orig, origin="upper", cmap="gray")
@@ -263,9 +263,9 @@ print("Reconstructed Images")
 plt.figure(figsize=(rows, columns))
 plt.imshow(canvas_recon, origin="upper", cmap="gray")
 plt.show()
-'''
 
-'''
+
+
 # Print weights
 size = num_hidden_1
 # Calculate number of rows and columns needed to display all weight matrices
@@ -283,13 +283,13 @@ for r in range(0, rows):
 	for c in range(0, columns):
 		if(r*columns+c >= size):
 			break
-		print(r*columns+c)
 		weight_pics[r * 28:(r + 1) * 28, c * 28:(c + 1) * 28] = \
 				weights[r*columns + c].reshape([28, 28])
 
-print(rows)
 print("Weight Images")
 plt.figure(figsize=(rows, columns))
 plt.imshow(weight_pics, origin="upper", cmap="gray")
 plt.show()
-'''
+
+# Classification layer on second part
+
