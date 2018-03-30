@@ -149,7 +149,7 @@ weights = {
 
 biases = {
 	'encoder_b1': tf.Variable([float(0)]*num_hidden_1),
-	'encoder_b2': tf.Variabgradient desle([float(0)]*num_hidden_2),
+	'encoder_b2': tf.Variable([float(0)]*num_hidden_2),
 	'decoder_b1': tf.Variable([float(0)]*num_hidden_1),
 	'decoder_b2': tf.Variable([float(0)]*num_input),
 }

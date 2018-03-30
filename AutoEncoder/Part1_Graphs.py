@@ -97,10 +97,10 @@ for i in range(0, 2000):
 test_target = np.array(test_target)
 
 # Training Parameters
-learning_rate = 0.1
-num_steps = 10
+learning_rate = 10
+num_steps = 1000
 
-display_step = 50
+display_step = 1
 
 learning_curves = []
 reconstruction_pics = []
@@ -169,8 +169,8 @@ for run in range(2, 7):
 		# Run the initializer
 		sess.run(init)
 	
-		for v in tf.trainable_variables(): # Print all tf variables
-			print(v)
+		#for v in tf.trainable_variables(): # Print all tf variables
+			#print(v)
 		#print(tf.trainable_variables()[1].eval(sess)) # Get session variable	
 		#print(tf.trainable_variables()[2].eval(sess))
 	
@@ -179,9 +179,11 @@ for run in range(2, 7):
 			# Run optimization op (backprop) and cost op (to get loss value)
 			training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
 			learning_curve.append(l)
+			
 			# Display logs per step
 			if i % display_step == 0 or i == 1:
 				print('Step %i: Loss: %f' % (i, l))
+
 		learning_curves.append(learning_curve)
 	
 		# Testing
