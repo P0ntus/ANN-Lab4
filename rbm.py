@@ -13,7 +13,9 @@ from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 from sklearn.metrics.classification import accuracy_score
 
-from dbn import SupervisedDBNClassification
+#from dbn.tensorflow import SupervisedDBNClassification
+#from dbn import BinaryRBM
+from dbn.cool_models import CoolBinaryRBM
 
 
 # ----- CLASSES -----
@@ -49,65 +51,122 @@ class picture:
 	def show_pictures(self, vector) :
 		plt.show()
 		
+def read_data():
+  # ----- DATAGEN PART -----
+
+  # Array with 10000 (8000 trn and 2000 tst) of 784-dim vectors representing matrices of 28x28
+  os.chdir( os.path.dirname(os.path.abspath(__file__)) )
+  t_trn_f = open("binMNIST_data/bindigit_trn.csv", "r")
+  reader = csv.reader(t_trn_f)
+  X_train = np.array([ [int(row[i]) for i in range( 0, len(row) ) ] for row in reader])
+  t_trn_f.close()
+
+  t_tst_f = open("binMNIST_data/bindigit_tst.csv", "r")
+  reader = csv.reader(t_tst_f)
+  X_test = np.array([ [int(row[i]) for i in range( 0, len(row) ) ] for row in reader])
+  t_tst_f.close()
+
+  # Matrix of target classifications
+  trn_f = open("binMNIST_data/targetdigit_trn.csv", "r")
+  reader = csv.reader(trn_f)
+  Y_train = np.array([ int(row[0]) for row in reader])
+  trn_f.close()
+
+  trn_f = open("binMNIST_data/targetdigit_tst.csv", "r")
+  reader = csv.reader(trn_f)
+  Y_test = np.array([ int(row[0]) for row in reader])
+  trn_f.close()
+
+  return X_train, X_test, Y_train, Y_test
 
 
-# ----- DATAGEN PART -----
+X_train, X_test, Y_train, Y_test = read_data()
 
-# Array with 10000 (8000 trn and 2000 tst) of 784-dim vectors representing matrices of 28x28
+class RBMConfig:
+  #def __init__(self, errors, n_hidden_units, training=True):
+  def __init__(self,
+               X_train,
+               X_test,
+               n_hidden_units=150,
+               learning_rate=0.1,
+               batch_size=32,
+               plot_training=False,
+               plot_test=False,
+               plot_label="Please fill in this yourself"):
 
-os.chdir( os.path.dirname(os.path.abspath(__file__)) )
+    self.X_train = X_train
+    self.X_test = X_test
+    self.n_hidden_units = n_hidden_units
+    self.learning_rate = learning_rate
+    self.batch_size = batch_size
+    self.plot_training = plot_training
+    self.plot_test = plot_test
+    self.plot_label = plot_label
 
-t_trn_f = open("binMNIST_data/bindigit_trn.csv", "r")
-reader = csv.reader(t_trn_f)
+    self.model = CoolBinaryRBM(n_hidden_units=n_hidden_units,
+                               learning_rate=learning_rate,
+                               n_epochs=2,
+                               contrastive_divergence_iter=1,
+                               batch_size=batch_size,
+                               verbose=True,
+                               X_test=X_test)
 
-pics = [ [int(row[i]) for i in range( 0, len(row) ) ] for row in reader]
+  def plot(self):
+    if self.plot_training:
+      plt.plot(self.model.training_errors, label=self.plot_label + " (training)")
+    if self.plot_test:
+      plt.plot(self.model.test_errors, label=self.plot_label + " (test)")
 
-t_trn_f.close()
+  def run(self):
+    self.model.fit(self.X_train)
+    self.plot()
 
-t_tst_f = open("binMNIST_data/bindigit_tst.csv", "r")
-reader = csv.reader(t_tst_f)
+  def save(self, filename):
+    self.model.save(filename)
 
-pics += [ [int(row[i]) for i in range( 0, len(row) ) ] for row in reader]
+config = 'units'
+rbm_configs = []
 
-t_tst_f.close()
+if config == 'units':
+  rbm_configs = [
+    RBMConfig(X_train, X_test, n_hidden_units=50, plot_test=True, plot_label="50 hidden units"),
+    RBMConfig(X_train, X_test, n_hidden_units=75, plot_test=True, plot_label="75 hidden units"),
+    RBMConfig(X_train, X_test, n_hidden_units=100, plot_test=True, plot_label="100 hidden units"),
+    RBMConfig(X_train, X_test, n_hidden_units=150, plot_test=True, plot_label="150 hidden units")
+  ]
+elif config == 'learning rate':
+  rbm_configs = [
+    RBMConfig(X_train, X_test, learning_rate=0.2, plot_test=True, plot_label="0.2 learning rate"),
+    RBMConfig(X_train, X_test, learning_rate=0.4, plot_test=True, plot_label="0.4 learning rate"),
+    RBMConfig(X_train, X_test, learning_rate=0.8, plot_test=True, plot_label="0.8 learning rate"),
+    RBMConfig(X_train, X_test, learning_rate=1.6, plot_test=True, plot_label="1.6 learning rate")
+  ]
+
+if rbm_configs:
+  for rbm_config in rbm_configs:
+    rbm_config.run()
+  plt.legend(loc='best', fancybox=True, framealpha=0.5)
+  plt.show()
+
+'''
+final_config = RBMConfig(X_train, X_test, n_hidden_units=?, learning_rate=?)
+final_config.run()
+final_config.save('coolmodel.pkl')
+model = CoolBinaryRBM.load('coolmodel.pkl')
+model.plot_digits(X_test)
+model.plot_weights()
+'''
 
 
-# Matrix of target classifications
 
-trn_f = open("binMNIST_data/targetdigit_trn.csv", "r")
-reader = csv.reader(trn_f)
-
-cls = [ int(row[0]) for row in reader]
-
-trn_f.close()
-
-trn_f = open("binMNIST_data/targetdigit_tst.csv", "r")
-reader = csv.reader(trn_f)
-
-cls += [ int(row[0]) for row in reader]
-
-trn_f.close()
-
-# Convert to numpy arrays
-pics = np.array( pics )
-cls = np.array( cls )
-
-
-# Use pics for pictures and cls to create data parts
-
-X_train, X_test, Y_train, Y_test = train_test_split(pics, cls, test_size=0.2, random_state=0) # As we have 8000 for trn and 2000 for tst
-
-# ----- DATA READY -----
-
-# ----- TRAINING -----
-
+'''
 classifier = SupervisedDBNClassification(hidden_layers_structure=[50],
                                          learning_rate_rbm=0.05,
                                          learning_rate=0.1,
                                          n_epochs_rbm=10,
                                          n_iter_backprop=50,
                                          batch_size=32,
-                                         activation_function='relu',
+                                         activation_function='sigmoid',
                                          dropout_p=0.2)
 classifier.fit(X_train, Y_train)
 
@@ -121,16 +180,7 @@ classifier = SupervisedDBNClassification.load('model.pkl')
 
 Y_pred = classifier.predict(X_test)
 print('Done.\nAccuracy: %f' % accuracy_score(Y_test, Y_pred))
-
+'''
 # ----- PLOT -----
-
-
-
-
-
-
-
-
-
 
 
