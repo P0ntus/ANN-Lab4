@@ -100,14 +100,13 @@ test_target = np.array(test_target)
 learning_rate = 10
 num_steps = 100
 
-display_step = 1
+display_step = 10
 
 # Network Parameters
-num_input = 784 # MNIST data input (img shape: 28*28)
-num_hidden_1 = 100 #256 # 1st layer num features
-num_hidden_2 = 50 #128 # 2nd layer num features (the latent dim)
-
-
+num_input = 784
+num_hidden_1 = 256
+num_hidden_2 = 128
+num_hidden_3 = 64
 
 
 
@@ -149,12 +148,6 @@ y_pred = decoder_op
 # Targets (Labels) are the input data.
 y_true = X
 
-print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-print(y_true)
-print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-print(y_pred)
-print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-
 # Define loss and optimizer, minimize the squared error
 
 loss = tf.reduce_mean(abs(y_true - y_pred))
@@ -164,13 +157,12 @@ optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
-enc_h1 = 0
-enc_b1 = 0
+layer_1_h = 0
+layer_1_b = 0
 
 # Start Training
 # Start a new TF session
 with tf.Session() as sess:
-
 
 	# Run the initializer
 	sess.run(init)
@@ -187,29 +179,8 @@ with tf.Session() as sess:
 		if i % display_step == 0 or i == 1:
 			print('Step %i: Loss: %f' % (i, l))
 
-	enc_h1 = tf.trainable_variables()[0].eval(sess)
-	enc_b1 = tf.trainable_variables()[2].eval(sess)
-	
-	# Testing
-	# Encode and decode images from test set and visualize their reconstruction.
-	columns = 10
-	reconstruction_pic = np.empty((28 * 2, 28 * columns))
-	
-	# Encode and decode the digit image
-	test_output = sess.run(decoder_op, feed_dict={X: test_input})
-
-	order = [18, 3, 7, 0, 2, 1, 15, 8, 6, 5] # order used to find one of each number to reconstruct
-	
-	# Display original images
-	for c in range(columns):
-		# Draw the original digits
-		reconstruction_pic[0 * 28:(0 + 1) * 28, c * 28:(c + 1) * 28] = \
-			test_input[order[c]].reshape([28, 28])
-	# Display reconstructed images
-	for c in range(columns):
-		# Draw the reconstructed digits
-		reconstruction_pic[1 * 28:(1 + 1) * 28, c * 28:(c + 1) * 28] = \
-			test_output[order[c]].reshape([28, 28])
+	layer_1_h = tf.trainable_variables()[0].eval(sess)
+	layer_1_b = tf.trainable_variables()[2].eval(sess)
 
 tf.reset_default_graph()
 
@@ -225,20 +196,20 @@ tf.reset_default_graph()
 X = tf.placeholder("float", [None, num_input])
 
 weights = {
-	'old_layer': tf.Variable(enc_h1),
+	'encoder_h1': tf.Variable(layer_1_h),
 	'encoder_h2': tf.Variable(tf.random_normal([num_hidden_1, num_hidden_2])),
 	'decoder_h1': tf.Variable(tf.random_normal([num_hidden_2, num_hidden_1])),
 }
 
 biases = {
-	'old_bias': tf.Variable(enc_b1),
+	'encoder_b1': tf.Variable(layer_1_b),
 	'encoder_b2': tf.Variable([float(0)]*num_hidden_2),
 	'decoder_b1': tf.Variable([float(0)]*num_hidden_1),
 }
 
 # Building the encoder
 def old_input(x):
-	layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['old_layer']), biases['old_bias']))
+	layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['encoder_h1']), biases['encoder_b1']))
 	return layer_1
 
 # Building the encoder
@@ -274,8 +245,95 @@ optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, var_list = L
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
-for v in tf.trainable_variables(): # Print all tf variables
-	print(v)
+layer_2_h = 0
+layer_2_b = 0
+
+# Start Training
+# Start a new TF session
+with tf.Session() as sess:
+
+	# Run the initializer
+	sess.run(init)
+	
+	for v in tf.trainable_variables(): # Print all tf variables
+		print(v)
+	
+	# Training
+	for i in range(1, num_steps+1):
+		# Run optimization op (backprop) and cost op (to get loss value)
+		training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
+		# Display logs per step
+		if i % display_step == 0 or i == 1:
+			print('Step %i: Loss: %f' % (i, l))
+
+	layer_2_h = tf.trainable_variables()[1].eval(sess)
+	layer_2_b = tf.trainable_variables()[4].eval(sess)
+
+tf.reset_default_graph()
+
+# ----- TWO LAYER END -----
+
+
+
+
+
+# ----- THREE LAYER START -----
+
+# tf Graph input (only pictures)
+X = tf.placeholder("float", [None, num_input])
+
+weights = {
+	'encoder_h1': tf.Variable(layer_1_h),
+	'encoder_h2': tf.Variable(layer_2_h),
+	'encoder_h3': tf.Variable(tf.random_normal([num_hidden_2, num_hidden_3])),
+	'decoder_h1': tf.Variable(tf.random_normal([num_hidden_3, num_hidden_2])),
+}
+
+biases = {
+	'encoder_b1': tf.Variable(layer_1_b),
+	'encoder_b2': tf.Variable(layer_2_b),
+	'encoder_b3': tf.Variable([float(0)]*num_hidden_3),
+	'decoder_b1': tf.Variable([float(0)]*num_hidden_2),
+}
+
+# Building the encoder
+def old_input(x):
+	layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['encoder_h1']), biases['encoder_b1']))
+	layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, weights['encoder_h2']), biases['encoder_b2']))
+	return layer_2
+
+# Building the encoder
+def encoder(x):
+	layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['encoder_h3']), biases['encoder_b3']))
+	return layer_1
+
+# Building the decoder
+def decoder(x):
+	layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['decoder_h1']), biases['decoder_b1']))
+	return layer_1
+
+# Construct model
+old_op = old_input(X)
+encoder_op = encoder(old_op)
+decoder_op = decoder(encoder_op)
+
+# Prediction
+y_pred = decoder_op
+# Targets (Labels) are the input data.
+y_true = old_op
+
+# Define loss and optimizer, minimize the squared error
+
+loss = tf.reduce_mean(abs(y_true - y_pred))
+
+L3 = [tf.trainable_variables()[2], tf.trainable_variables()[3], tf.trainable_variables()[6], tf.trainable_variables()[7]]
+
+optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, var_list = L3)
+
+#optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
+
+# Initialize the variables (i.e. assign their default value)
+init = tf.global_variables_initializer()
 
 # Start Training
 # Start a new TF session
@@ -301,6 +359,4 @@ with tf.Session() as sess:
 
 tf.reset_default_graph()
 
-# ----- TWO LAYER END -----
-
-
+# ----- THREE LAYER END -----
