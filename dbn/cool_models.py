@@ -1,5 +1,5 @@
 import numpy as np
-from .models import BinaryRBM
+from .models import BinaryRBM, SupervisedDBNClassification, NumPyAbstractSupervisedDBN
 import matplotlib.pyplot as plt
 import math
 
@@ -9,8 +9,8 @@ class CoolBinaryRBM(BinaryRBM):
                n_hidden_units=100,
                activation_function='sigmoid',
                optimization_algorithm='sgd',
-               learning_rate=1e-3,
-               n_epochs=10,
+               learning_rate=0.1,
+               n_epochs=20,
                contrastive_divergence_iter=1,
                batch_size=32,
                verbose=True,
@@ -82,12 +82,61 @@ class CoolBinaryRBM(BinaryRBM):
       for c in range(0, columns):
         if(r*columns+c >= size):
           break
-        print(r*columns+c)
+        #print(r*columns+c)
         weight_pics[r * 28:(r + 1) * 28, c * 28:(c + 1) * 28] = \
             self.W[r*columns + c].reshape([28, 28])
 
-    print(rows)
-    print("Weight Images")
+    #print(rows)
+    #print("Weight Images")
+    plt.figure(figsize=(rows, columns))
+    plt.imshow(weight_pics, origin="upper", cmap="gray")
+    plt.show()
+
+class CoolSupervisedDBNClassification(SupervisedDBNClassification):
+
+  def __init__(self,
+               hidden_layers_structure=[100, 100],
+               learning_rate=0.1,
+               learning_rate_rbm=0.1,
+               n_epochs_rbm=20,
+               batch_size=32):
+
+    self.hidden_layers_structure = hidden_layers_structure
+
+    super().__init__(hidden_layers_structure=hidden_layers_structure,
+                     learning_rate=learning_rate,
+                     learning_rate_rbm=learning_rate_rbm,
+                     n_epochs_rbm=n_epochs_rbm,
+                     batch_size=batch_size,
+                     n_iter_backprop=100,
+                     dropout_p=0.2)
+
+  def plot_weights(self, layer):
+    W = self.unsupervised_dbn.rbm_layers[layer].W
+
+    size = self.hidden_layers_structure[layer]
+
+    # Calculate number of rows and columns needed to display all weight matrices
+    columns = math.ceil(math.sqrt(size))
+    rows = 1
+    count = rows * columns
+    while(count < size):
+      rows += 1
+      count = rows * columns
+
+    # Add all weight matrices
+    #weights ?
+    weight_pics = np.empty((28 * rows, 28 * columns))
+    for r in range(0, rows):
+      for c in range(0, columns):
+        if(r*columns+c >= size):
+          break
+        #print(r*columns+c)
+        weight_pics[r * 28:(r + 1) * 28, c * 28:(c + 1) * 28] = \
+            W[r*columns + c].reshape([28, 28])
+
+    #print(rows)
+    #print("Weight Images")
     plt.figure(figsize=(rows, columns))
     plt.imshow(weight_pics, origin="upper", cmap="gray")
     plt.show()

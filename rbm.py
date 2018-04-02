@@ -15,7 +15,8 @@ from sklearn.metrics.classification import accuracy_score
 
 #from dbn.tensorflow import SupervisedDBNClassification
 #from dbn import BinaryRBM
-from dbn.cool_models import CoolBinaryRBM
+from rbm_config import RBMConfig
+from dbn_config import DBNConfig
 
 
 # ----- CLASSES -----
@@ -82,105 +83,61 @@ def read_data():
 
 X_train, X_test, Y_train, Y_test = read_data()
 
-class RBMConfig:
-  #def __init__(self, errors, n_hidden_units, training=True):
-  def __init__(self,
-               X_train,
-               X_test,
-               n_hidden_units=150,
-               learning_rate=0.1,
-               batch_size=32,
-               plot_training=False,
-               plot_test=False,
-               plot_label="Please fill in this yourself"):
 
-    self.X_train = X_train
-    self.X_test = X_test
-    self.n_hidden_units = n_hidden_units
-    self.learning_rate = learning_rate
-    self.batch_size = batch_size
-    self.plot_training = plot_training
-    self.plot_test = plot_test
-    self.plot_label = plot_label
+task = 5
 
-    self.model = CoolBinaryRBM(n_hidden_units=n_hidden_units,
-                               learning_rate=learning_rate,
-                               n_epochs=2,
-                               contrastive_divergence_iter=1,
-                               batch_size=batch_size,
-                               verbose=True,
-                               X_test=X_test)
+if task == 1:
+  # plotting reconstruction error
+  config = 'learning rate'
+  rbm_configs = []
+  if config == 'units':
+    rbm_configs = [
+      RBMConfig(X_train, X_test, n_hidden_units=50, plot_test=True, plot_label="50 hidden units"),
+      RBMConfig(X_train, X_test, n_hidden_units=75, plot_test=True, plot_label="75 hidden units"),
+      RBMConfig(X_train, X_test, n_hidden_units=100, plot_test=True, plot_label="100 hidden units"),
+      RBMConfig(X_train, X_test, n_hidden_units=150, plot_test=True, plot_label="150 hidden units")
+    ]
+  elif config == 'learning rate':
+    rbm_configs = [
+      RBMConfig(X_train, X_test, learning_rate=0.2, plot_test=True, plot_label="0.2 learning rate"),
+      RBMConfig(X_train, X_test, learning_rate=0.4, plot_test=True, plot_label="0.4 learning rate"),
+      RBMConfig(X_train, X_test, learning_rate=0.8, plot_test=True, plot_label="0.8 learning rate"),
+      RBMConfig(X_train, X_test, learning_rate=1.6, plot_test=True, plot_label="1.6 learning rate")
+    ]
 
-  def plot(self):
-    if self.plot_training:
-      plt.plot(self.model.training_errors, label=self.plot_label + " (training)")
-    if self.plot_test:
-      plt.plot(self.model.test_errors, label=self.plot_label + " (test)")
+  if rbm_configs:
+    for rbm_config in rbm_configs:
+      rbm_config.run()
+    plt.legend(loc='best', fancybox=True, framealpha=0.5)
+    plt.show()
 
-  def run(self):
-    self.model.fit(self.X_train)
-    self.plot()
+elif task == 2:
+  # plotting reconstructed digits
+  hidden_units = 50
+  config = RBMConfig(X_train, X_test, n_hidden_units=hidden_units, load=True)
+  config.plot_digits()
 
-  def save(self, filename):
-    self.model.save(filename)
+elif task == 3:
+  # plotting reconstructed weights
+  hidden_units = 50
+  config = RBMConfig(X_train, X_test, n_hidden_units=hidden_units, load=True)
+  config.plot_weights()
 
-config = 'units'
-rbm_configs = []
-
-if config == 'units':
-  rbm_configs = [
-    RBMConfig(X_train, X_test, n_hidden_units=50, plot_test=True, plot_label="50 hidden units"),
-    RBMConfig(X_train, X_test, n_hidden_units=75, plot_test=True, plot_label="75 hidden units"),
-    RBMConfig(X_train, X_test, n_hidden_units=100, plot_test=True, plot_label="100 hidden units"),
-    RBMConfig(X_train, X_test, n_hidden_units=150, plot_test=True, plot_label="150 hidden units")
-  ]
-elif config == 'learning rate':
-  rbm_configs = [
-    RBMConfig(X_train, X_test, learning_rate=0.2, plot_test=True, plot_label="0.2 learning rate"),
-    RBMConfig(X_train, X_test, learning_rate=0.4, plot_test=True, plot_label="0.4 learning rate"),
-    RBMConfig(X_train, X_test, learning_rate=0.8, plot_test=True, plot_label="0.8 learning rate"),
-    RBMConfig(X_train, X_test, learning_rate=1.6, plot_test=True, plot_label="1.6 learning rate")
+elif task == 4:
+  # training dbn's and getting classification accuracy
+  configs = [
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[], load=True),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150], load=True),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100], load=True),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100, 50], load=True)
   ]
 
-if rbm_configs:
-  for rbm_config in rbm_configs:
-    rbm_config.run()
-  plt.legend(loc='best', fancybox=True, framealpha=0.5)
-  plt.show()
+  for config in configs:
+    config.run()
 
-'''
-final_config = RBMConfig(X_train, X_test, n_hidden_units=?, learning_rate=?)
-final_config.run()
-final_config.save('coolmodel.pkl')
-model = CoolBinaryRBM.load('coolmodel.pkl')
-model.plot_digits(X_test)
-model.plot_weights()
-'''
-
-
-
-'''
-classifier = SupervisedDBNClassification(hidden_layers_structure=[50],
-                                         learning_rate_rbm=0.05,
-                                         learning_rate=0.1,
-                                         n_epochs_rbm=10,
-                                         n_iter_backprop=50,
-                                         batch_size=32,
-                                         activation_function='sigmoid',
-                                         dropout_p=0.2)
-classifier.fit(X_train, Y_train)
-
-# Save the model
-classifier.save('model.pkl')
-
-# Restore it
-classifier = SupervisedDBNClassification.load('model.pkl')
-
-# ----- TEST -----
-
-Y_pred = classifier.predict(X_test)
-print('Done.\nAccuracy: %f' % accuracy_score(Y_test, Y_pred))
-'''
-# ----- PLOT -----
-
+elif task == 5:
+  # plotting reconstructed weights
+  config = DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100, 50], load=True)
+  config.run()
+  config.plot_weights(0)
 
