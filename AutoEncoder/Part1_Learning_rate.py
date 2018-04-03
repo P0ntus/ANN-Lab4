@@ -97,15 +97,21 @@ for i in range(0, 2000):
 test_target = np.array(test_target)
 
 # Training Parameters
-learning_rate = 100
-num_steps = 1500
+num_steps = 100
 
-display_step = 50
+display_step = 1
 
-for run in range(1, 3):
+learning_curves = []
+reconstruction_pics = []
+for run in range(1, 6):
+
+	learning_rate = 10**run
+	print("Run: ", run, "learning rate: ", learning_rate)
+	
+	learning_curve = []
 
 	# Network Parameters
-	num_hidden_1 = 50 * run
+	num_hidden_1 = 100
 	num_input = 784 # MNIST data input (img shape: 28*28)
 
 	# tf Graph input (only pictures)
@@ -151,11 +157,7 @@ for run in range(1, 3):
 
 	loss = tf.reduce_mean(abs(y_true - y_pred))
 
-	#L1 = [tf.trainable_variables()[1]]
-	#opt_L1 = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, var_list = L1)
-
 	optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
-	#optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
 
 	# Initialize the variables (i.e. assign their default value)
 	init = tf.global_variables_initializer()
@@ -168,8 +170,8 @@ for run in range(1, 3):
 		# Run the initializer
 		sess.run(init)
 	
-		for v in tf.trainable_variables(): # Print all tf variables
-			print(v)
+		#for v in tf.trainable_variables(): # Print all tf variables
+			#print(v)
 		#print(tf.trainable_variables()[1].eval(sess)) # Get session variable	
 		#print(tf.trainable_variables()[2].eval(sess))
 	
@@ -177,34 +179,43 @@ for run in range(1, 3):
 		for i in range(1, num_steps+1):
 			# Run optimization op (backprop) and cost op (to get loss value)
 			training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
+			learning_curve.append(l)
+			
 			# Display logs per step
-			if i % display_step == 0 or i == 1:
-				print('Step %i: Loss: %f' % (i, l))
+			#if i % display_step == 0 or i == 1:
+				#print('Step %i: Loss: %f' % (i, l))
 
-		weights = tf.trainable_variables()[1].eval(sess) # Get session variable	
+		learning_curves.append(learning_curve)
+	
+		# Testing
+		# Encode and decode images from test set and visualize their reconstruction.
+		columns = 10
+		reconstruction_pic = np.empty((28 * 2, 28 * columns))
+	
+		# Encode and decode the digit image
+		test_output = sess.run(decoder_op, feed_dict={X: test_input})
 
-	size = num_hidden_1
-	# Calculate number of rows and columns needed to display all weight matrices
-	columns = math.ceil(math.sqrt(size))
-	rows = 1
-	count = rows * columns
-	while(count < size):
-		rows += 1
-		count = rows * columns
+		order = [18, 3, 7, 0, 2, 1, 15, 8, 6, 5] # order used to find one of each number to reconstruct
+	
+		# Display original images
+		for c in range(columns):
+			# Draw the original digits
+			reconstruction_pic[0 * 28:(0 + 1) * 28, c * 28:(c + 1) * 28] = \
+				test_input[order[c]].reshape([28, 28])
+		# Display reconstructed images
+		for c in range(columns):
+			# Draw the reconstructed digits
+			reconstruction_pic[1 * 28:(1 + 1) * 28, c * 28:(c + 1) * 28] = \
+				test_output[order[c]].reshape([28, 28])
 
-	# Add all weight matrices
-	weight_pics = np.empty((28 * rows, 28 * columns))
-	for r in range(0, rows):
-		for c in range(0, columns):
-			if(r*columns+c >= size):
-				break
-			weight_pics[r * 28:(r + 1) * 28, c * 28:(c + 1) * 28] = \
-					weights[r*columns + c].reshape([28, 28])
+		reconstruction_pics.append(reconstruction_pic)
 
-	print("Weight Images using", 50 * run, "nodes")
-	plt.figure(figsize=(rows, columns))
-	plt.imshow(weight_pics, origin="upper", cmap="gray")
-	plt.show()
 	tf.reset_default_graph()
 
+for i in range(0, len(learning_curves)):
+	plt.plot(learning_curves[i])
 
+plt.legend(['Learning rate = 10', 'Learning rate = 100', 'Learning rate = 1000', 'Learning rate = 10000', 'Learning rate = 100000'])
+plt.ylabel('Mean error')
+plt.xlabel('Epochs')
+plt.show()

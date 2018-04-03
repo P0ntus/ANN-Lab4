@@ -96,22 +96,34 @@ for i in range(0, 2000):
 	test_target.append(binary_target(tmp_test_target[i]))
 test_target = np.array(test_target)
 
+columns = 10
+
+order = [18, 3, 7, 0, 2, 1, 15, 8, 6, 5] # order used to find one of each number to reconstruct
+
+reconstruction_pic = np.empty((28 * 5, 28 * columns))
+# Display original images
+for c in range(columns):
+	# Draw the original digits
+	reconstruction_pic[0 * 28:(0 + 1) * 28, c * 28:(c + 1) * 28] = \
+		test_input[order[c]].reshape([28, 28])
+
 # Training Parameters
-learning_rate = 10
-num_steps = 1000
+learning_rate = 100
+num_steps = 1500
 
-display_step = 1
-
+display_step = 10000
+nodes = [25, 50, 100, 150]
 learning_curves = []
-reconstruction_pics = []
-for run in range(2, 7):
-
-	print("Run: ", run - 1, "nodes: ", 25 * run)
-	learning_curve = []
+for run in range(1, 5):
 
 	# Network Parameters
-	num_hidden_1 = 25 * run
+	num_hidden_1 = nodes[run-1]
 	num_input = 784 # MNIST data input (img shape: 28*28)
+
+	print("Run: ", run - 1, "nodes: ", num_hidden_1)
+	learning_curve = []
+
+	
 
 	# tf Graph input (only pictures)
 	X = tf.placeholder("float", [None, num_input])
@@ -175,53 +187,38 @@ for run in range(2, 7):
 		#print(tf.trainable_variables()[2].eval(sess))
 	
 		# Training
-		for i in range(1, num_steps+1):
+		for i in range(0, num_steps+1):
 			# Run optimization op (backprop) and cost op (to get loss value)
 			training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
 			learning_curve.append(l)
 			
 			# Display logs per step
-			if i % display_step == 0 or i == 1:
-				print('Step %i: Loss: %f' % (i, l))
+			#if i % display_step == 0 or i == 1:
+				#print('Step %i: Loss: %f' % (i, l))
 
 		learning_curves.append(learning_curve)
-	
-		# Testing
-		# Encode and decode images from test set and visualize their reconstruction.
-		columns = 10
-		reconstruction_pic = np.empty((28 * 2, 28 * columns))
 	
 		# Encode and decode the digit image
 		test_output = sess.run(decoder_op, feed_dict={X: test_input})
 
-		order = [18, 3, 7, 0, 2, 1, 15, 8, 6, 5] # order used to find one of each number to reconstruct
-	
-		# Display original images
-		for c in range(columns):
-			# Draw the original digits
-			reconstruction_pic[0 * 28:(0 + 1) * 28, c * 28:(c + 1) * 28] = \
-				test_input[order[c]].reshape([28, 28])
 		# Display reconstructed images
 		for c in range(columns):
 			# Draw the reconstructed digits
-			reconstruction_pic[1 * 28:(1 + 1) * 28, c * 28:(c + 1) * 28] = \
+			reconstruction_pic[run * 28:(run + 1) * 28, c * 28:(c + 1) * 28] = \
 				test_output[order[c]].reshape([28, 28])
-
-		reconstruction_pics.append(reconstruction_pic)
 
 	tf.reset_default_graph()
 
 for i in range(0, len(learning_curves)):
-	print(learning_curves[i])
+	#print(learning_curves[i])
 	plt.plot(learning_curves[i])
 
-plt.legend(['y = 50 nodes', 'y = 75 nodes', 'y = 100 nodes', 'y = 125 nodes', 'y = 150 nodes'])
+plt.legend(['50 nodes', '75 nodes', '100 nodes', '150 nodes'])
 plt.ylabel('Mean error')
 plt.xlabel('Epochs')
 plt.show()
 
-print("Reconstruction using", num_hidden_1, "nodes")
-plt.figure(figsize=(2, columns))
-plt.imshow(reconstruction_pics[2], origin="upper", cmap="gray")
+plt.figure(figsize=(5, columns))
+plt.imshow(reconstruction_pic, origin="upper", cmap="gray")
 plt.show()
 

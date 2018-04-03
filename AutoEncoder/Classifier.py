@@ -89,7 +89,7 @@ test_target = np.array(cls[8000:10000])
 
 # Training Parameters
 learning_rate = 10
-num_steps = 500
+num_steps = 100
 
 display_step = 1
 
@@ -168,7 +168,7 @@ with tf.Session() as sess:
 		# Display logs per step
 		if i % display_step == 0 or i == 1:
 			print('Step %i: Loss: %f' % (i, l))
-	
+
 	training_encoded_output = sess.run(encoder_op, feed_dict={X: training_input})
 	test_encoded_output = sess.run(encoder_op, feed_dict={X: test_input})
 	
@@ -188,7 +188,7 @@ feature_columns = [tf.feature_column.numeric_column("x", shape=[16, 16])]
 
 classifier = tf.estimator.DNNClassifier(
 	feature_columns=feature_columns,
-	hidden_units=[128, 32],
+	hidden_units=[256],
 	optimizer=tf.train.AdamOptimizer(),
 	n_classes=10,
 	dropout=0.1,

@@ -98,18 +98,52 @@ test_target = np.array(test_target)
 
 # Training Parameters
 learning_rate = 10
-num_steps = 100
+num_steps = 250
+classifier_steps = 10000
 
-display_step = 10
+display_step = 25
 
 # Network Parameters
 num_input = 784
-num_hidden_1 = 256
-num_hidden_2 = 128
-num_hidden_3 = 64
+num_hidden_1 = 484
+num_hidden_2 = 256
+num_hidden_3 = 100
 
+# ----- CLASSIFICATION START -----
+training_target = np.array(cls[0:8000])
+test_target = np.array(cls[8000:10000])
 
+feature_columns = [tf.feature_column.numeric_column("x", shape=[int(math.sqrt(num_input)), int(math.sqrt(num_input))])]
 
+classifier = tf.estimator.DNNClassifier(
+	feature_columns=feature_columns,
+	hidden_units=[num_input],
+	optimizer=tf.train.AdamOptimizer(),
+	n_classes=10,
+	dropout=0.1,
+	model_dir="./tmp/mnist_model0"
+)
+
+train_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": training_input},
+	y=training_target,
+	num_epochs=None,
+	batch_size=50,
+	shuffle=True
+)
+
+classifier.train(input_fn=train_input_fn, steps=classifier_steps)
+
+test_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": test_input},
+	y=test_target,
+	num_epochs=1,
+	shuffle=False
+)
+
+accuracy_score = classifier.evaluate(input_fn=test_input_fn)["accuracy"]
+print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
+# ----- CLASSIFICATION END -----
 
 
 # ----- SINGLE LAYER START -----
@@ -160,6 +194,9 @@ init = tf.global_variables_initializer()
 layer_1_h = 0
 layer_1_b = 0
 
+training_encoded_output = []
+test_encoded_output = []
+
 # Start Training
 # Start a new TF session
 with tf.Session() as sess:
@@ -181,8 +218,47 @@ with tf.Session() as sess:
 
 	layer_1_h = tf.trainable_variables()[0].eval(sess)
 	layer_1_b = tf.trainable_variables()[2].eval(sess)
+	
+	training_encoded_output = sess.run(encoder_op, feed_dict={X: training_input})
+	test_encoded_output = sess.run(encoder_op, feed_dict={X: test_input})
 
 tf.reset_default_graph()
+
+# ----- CLASSIFICATION START -----
+training_target = np.array(cls[0:8000])
+test_target = np.array(cls[8000:10000])
+
+feature_columns = [tf.feature_column.numeric_column("x", shape=[int(math.sqrt(num_hidden_1)), int(math.sqrt(num_hidden_1))])]
+
+classifier = tf.estimator.DNNClassifier(
+	feature_columns=feature_columns,
+	hidden_units=[num_hidden_1],
+	optimizer=tf.train.AdamOptimizer(),
+	n_classes=10,
+	dropout=0.1,
+	model_dir="./tmp/mnist_model1"
+)
+
+train_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": training_encoded_output},
+	y=training_target,
+	num_epochs=None,
+	batch_size=50,
+	shuffle=True
+)
+
+classifier.train(input_fn=train_input_fn, steps=classifier_steps)
+
+test_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": test_encoded_output},
+	y=test_target,
+	num_epochs=1,
+	shuffle=False
+)
+
+accuracy_score = classifier.evaluate(input_fn=test_input_fn)["accuracy"]
+print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
+# ----- CLASSIFICATION END -----
 
 # ----- SINGLE LAYER END -----
 
@@ -248,6 +324,9 @@ init = tf.global_variables_initializer()
 layer_2_h = 0
 layer_2_b = 0
 
+training_encoded_output = []
+test_encoded_output = []
+
 # Start Training
 # Start a new TF session
 with tf.Session() as sess:
@@ -268,8 +347,47 @@ with tf.Session() as sess:
 
 	layer_2_h = tf.trainable_variables()[1].eval(sess)
 	layer_2_b = tf.trainable_variables()[4].eval(sess)
+	
+	training_encoded_output = sess.run(encoder_op, feed_dict={X: training_input})
+	test_encoded_output = sess.run(encoder_op, feed_dict={X: test_input})
 
 tf.reset_default_graph()
+
+# ----- CLASSIFICATION START -----
+training_target = np.array(cls[0:8000])
+test_target = np.array(cls[8000:10000])
+
+feature_columns = [tf.feature_column.numeric_column("x", shape=[int(math.sqrt(num_hidden_2)), int(math.sqrt(num_hidden_2))])]
+
+classifier = tf.estimator.DNNClassifier(
+	feature_columns=feature_columns,
+	hidden_units=[num_hidden_2],
+	optimizer=tf.train.AdamOptimizer(),
+	n_classes=10,
+	dropout=0.1,
+	model_dir="./tmp/mnist_model2"
+)
+
+train_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": training_encoded_output},
+	y=training_target,
+	num_epochs=None,
+	batch_size=50,
+	shuffle=True
+)
+
+classifier.train(input_fn=train_input_fn, steps=classifier_steps)
+
+test_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": test_encoded_output},
+	y=test_target,
+	num_epochs=1,
+	shuffle=False
+)
+
+accuracy_score = classifier.evaluate(input_fn=test_input_fn)["accuracy"]
+print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
+# ----- CLASSIFICATION END -----
 
 # ----- TWO LAYER END -----
 
@@ -335,6 +453,9 @@ optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, var_list = L
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
+training_encoded_output = []
+test_encoded_output = []
+
 # Start Training
 # Start a new TF session
 with tf.Session() as sess:
@@ -355,8 +476,45 @@ with tf.Session() as sess:
 		if i % display_step == 0 or i == 1:
 			print('Step %i: Loss: %f' % (i, l))
 
-	#print(tf.trainable_variables()[0].eval(sess)[0][0])
+	training_encoded_output = sess.run(encoder_op, feed_dict={X: training_input})
+	test_encoded_output = sess.run(encoder_op, feed_dict={X: test_input})
 
 tf.reset_default_graph()
+
+# ----- CLASSIFICATION START -----
+training_target = np.array(cls[0:8000])
+test_target = np.array(cls[8000:10000])
+
+feature_columns = [tf.feature_column.numeric_column("x", shape=[int(math.sqrt(num_hidden_3)), int(math.sqrt(num_hidden_3))])]
+
+classifier = tf.estimator.DNNClassifier(
+	feature_columns=feature_columns,
+	hidden_units=[num_hidden_3],
+	optimizer=tf.train.AdamOptimizer(),
+	n_classes=10,
+	dropout=0.1,
+	model_dir="./tmp/mnist_model3"
+)
+
+train_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": training_encoded_output},
+	y=training_target,
+	num_epochs=None,
+	batch_size=50,
+	shuffle=True
+)
+
+classifier.train(input_fn=train_input_fn, steps=classifier_steps)
+
+test_input_fn = tf.estimator.inputs.numpy_input_fn(
+	x={"x": test_encoded_output},
+	y=test_target,
+	num_epochs=1,
+	shuffle=False
+)
+
+accuracy_score = classifier.evaluate(input_fn=test_input_fn)["accuracy"]
+print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
+# ----- CLASSIFICATION END -----
 
 # ----- THREE LAYER END -----
