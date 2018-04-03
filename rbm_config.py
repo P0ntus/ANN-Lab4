@@ -67,8 +67,8 @@ class RBMConfig:
       self.plot()
 
   def plot_digits(self):
-    self.model.plot_digits()
+    self.model.plot_digits(self.X_test)
 
-  def plot_weights(self):
-    self.model.plot_weights()
+  def plot_weights(self, columns=0):
+    self.model.plot_weights(columns)
 

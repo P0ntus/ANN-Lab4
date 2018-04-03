@@ -84,25 +84,25 @@ def read_data():
 X_train, X_test, Y_train, Y_test = read_data()
 
 
-task = 5
+task = 3
 
 if task == 1:
   # plotting reconstruction error
-  config = 'learning rate'
+  config = 'units'
   rbm_configs = []
-  if config == 'units':
+  if config == 'learning_rate':
     rbm_configs = [
-      RBMConfig(X_train, X_test, n_hidden_units=50, plot_test=True, plot_label="50 hidden units"),
-      RBMConfig(X_train, X_test, n_hidden_units=75, plot_test=True, plot_label="75 hidden units"),
-      RBMConfig(X_train, X_test, n_hidden_units=100, plot_test=True, plot_label="100 hidden units"),
-      RBMConfig(X_train, X_test, n_hidden_units=150, plot_test=True, plot_label="150 hidden units")
+      RBMConfig(X_train, X_test, n_hidden_units=150, learning_rate=0.2, plot_test=True, plot_label="0.2 learning rate"),
+      RBMConfig(X_train, X_test, n_hidden_units=150, learning_rate=0.4, plot_test=True, plot_label="0.4 learning rate"),
+      RBMConfig(X_train, X_test, n_hidden_units=150, learning_rate=0.8, plot_test=True, plot_label="0.8 learning rate"),
+      RBMConfig(X_train, X_test, n_hidden_units=150, learning_rate=1.6, plot_test=True, plot_label="1.6 learning rate")
     ]
-  elif config == 'learning rate':
+  elif config == 'units':
     rbm_configs = [
-      RBMConfig(X_train, X_test, learning_rate=0.2, plot_test=True, plot_label="0.2 learning rate"),
-      RBMConfig(X_train, X_test, learning_rate=0.4, plot_test=True, plot_label="0.4 learning rate"),
-      RBMConfig(X_train, X_test, learning_rate=0.8, plot_test=True, plot_label="0.8 learning rate"),
-      RBMConfig(X_train, X_test, learning_rate=1.6, plot_test=True, plot_label="1.6 learning rate")
+      RBMConfig(X_train, X_test, n_hidden_units=50, learning_rate=0.4, plot_test=True, plot_label="50 hidden units"),
+      RBMConfig(X_train, X_test, n_hidden_units=75, learning_rate=0.4, plot_test=True, plot_label="75 hidden units"),
+      RBMConfig(X_train, X_test, n_hidden_units=100, learning_rate=0.4, plot_test=True, plot_label="100 hidden units"),
+      RBMConfig(X_train, X_test, n_hidden_units=150, learning_rate=0.4, plot_test=True, plot_label="150 hidden units")
     ]
 
   if rbm_configs:
@@ -113,23 +113,29 @@ if task == 1:
 
 elif task == 2:
   # plotting reconstructed digits
-  hidden_units = 50
-  config = RBMConfig(X_train, X_test, n_hidden_units=hidden_units, load=True)
+  hidden_units = 150
+  config = RBMConfig(X_train, X_test, learning_rate=0.4, n_hidden_units=hidden_units, load=True)
   config.plot_digits()
 
 elif task == 3:
   # plotting reconstructed weights
-  hidden_units = 50
-  config = RBMConfig(X_train, X_test, n_hidden_units=hidden_units, load=True)
-  config.plot_weights()
+  hidden_units = 100
+  config = RBMConfig(X_train, X_test, learning_rate=0.4, n_hidden_units=hidden_units, load=True)
+  config.plot_weights(10)
 
 elif task == 4:
   # training dbn's and getting classification accuracy
   configs = [
-    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[], load=True),
-    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150], load=True),
-    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100], load=True),
-    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100, 50], load=True)
+    #DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[], load=True),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 150], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 125], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 150, 150], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 150, 100], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 125, 125], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 125, 100], load=False),
+    DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100, 50], load=False)
   ]
 
   for config in configs:
@@ -137,7 +143,7 @@ elif task == 4:
 
 elif task == 5:
   # plotting reconstructed weights
-  config = DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 100, 50], load=True)
+  config = DBNConfig(X_train, Y_train, X_test, Y_test, hidden_layers_structure=[150, 125, 125], load=True)
   config.run()
-  config.plot_weights(0)
+  config.plot_weights(0, 25)
 

@@ -1,5 +1,6 @@
 import numpy as np
-from .models import BinaryRBM, SupervisedDBNClassification, NumPyAbstractSupervisedDBN
+#from .tensorflow.models import BinaryRBM, SupervisedDBNClassification
+from .models import BinaryRBM, SupervisedDBNClassification
 import matplotlib.pyplot as plt
 import math
 
@@ -64,11 +65,12 @@ class CoolBinaryRBM(BinaryRBM):
     plt.imshow(reconstruction_pic, origin="upper", cmap="gray")
     plt.show()
 
-  def plot_weights(self):
+  def plot_weights(self, columns=0):
     size = self.n_hidden_units
 
     # Calculate number of rows and columns needed to display all weight matrices
-    columns = math.ceil(math.sqrt(size))
+    if columns == 0:
+      columns = math.ceil(math.sqrt(size))
     rows = 1
     count = rows * columns
     while(count < size):
@@ -111,13 +113,14 @@ class CoolSupervisedDBNClassification(SupervisedDBNClassification):
                      n_iter_backprop=100,
                      dropout_p=0.2)
 
-  def plot_weights(self, layer):
+  def plot_weights(self, layer, columns=0):
     W = self.unsupervised_dbn.rbm_layers[layer].W
 
     size = self.hidden_layers_structure[layer]
 
     # Calculate number of rows and columns needed to display all weight matrices
-    columns = math.ceil(math.sqrt(size))
+    if columns == 0:
+      columns = math.ceil(math.sqrt(size))
     rows = 1
     count = rows * columns
     while(count < size):

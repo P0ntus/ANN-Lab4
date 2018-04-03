@@ -11,8 +11,8 @@ class DBNConfig:
                X_test,
                Y_test,
                hidden_layers_structure=[100, 100],
-               learning_rate=0.1,
-               learning_rate_rbm=0.1,
+               learning_rate=0.4,
+               learning_rate_rbm=0.4,
                batch_size=32,
                load=False):
 
@@ -26,7 +26,7 @@ class DBNConfig:
     self.batch_size = batch_size
     self.load = load
 
-    self.n_epochs_rbm = 2
+    self.n_epochs_rbm = 20
 
     if self.load and os.path.isfile(self.filename()):
       self.model = CoolSupervisedDBNClassification.load(self.filename())
@@ -61,6 +61,6 @@ class DBNConfig:
     Y_pred = self.model.predict(self.X_test)
     print(self.filename() + 'Done.\nAccuracy: %f' % accuracy_score(self.Y_test, Y_pred))
 
-  def plot_weights(self, layer):
-    self.model.plot_weights(layer)
+  def plot_weights(self, layer, columns=0):
+    self.model.plot_weights(layer, columns)
 
