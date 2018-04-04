@@ -34,6 +34,48 @@ def binary_target(input) :
 	output[input] = 1
 	return output
 
+def show_weights(weights):
+	# Calculate number of rows and columns needed to display all weight matrices
+	columns = math.ceil(math.sqrt(len(weights)))
+	rows = 1
+	count = rows * columns
+	while(count < len(weights)):
+		rows += 1
+		count = rows * columns
+
+	# Add all weight matrices
+	weight_pics = np.empty((int(math.sqrt(len(weights[0]))) * rows, int(math.sqrt(len(weights[0]))) * columns))
+	for r in range(0, rows):
+		for c in range(0, columns):
+			if(r*columns+c >= len(weights)):
+				break
+			weight_pics[r * int(math.sqrt(len(weights[0]))):(r + 1) * int(math.sqrt(len(weights[0]))), c * int(math.sqrt(len(weights[0]))):(c + 1) * int(math.sqrt(len(weights[0])))] = \
+					weights[r*columns + c].reshape([int(math.sqrt(len(weights[0]))), int(math.sqrt(len(weights[0])))])
+
+	#print("Weight Images using", 50 * run, "nodes")
+	plt.figure(figsize=(rows, columns))
+	plt.imshow(weight_pics, origin="upper", cmap="gray")
+	plt.show()
+
+def show_reconstruction(input, output, dimension):
+	order = [18, 3, 7, 0, 2, 1, 15, 8, 6, 5] # order used to find one of each number to reconstruct
+	reconstruction_pic = np.empty((dimension * 2, dimension * len(order)))
+	# Display original images
+	for c in range(len(order)):
+		# Draw the original digits
+		reconstruction_pic[0 * dimension:(0 + 1) * dimension, c * dimension:(c + 1) * dimension] = \
+			input[order[c]].reshape([dimension, dimension])
+
+	# Display reconstructed images
+	for c in range(len(order)):
+		# Draw the reconstructed digits
+		reconstruction_pic[1 * dimension:(1 + 1) * dimension, c * dimension:(c + 1) * dimension] = \
+			output[order[c]].reshape([dimension, dimension])
+			
+	plt.figure(figsize=(2, len(order)))
+	plt.imshow(reconstruction_pic, origin="upper", cmap="gray")
+	plt.show()
+	
 # ----- FUNCTIONS END -----
 
 # ----- DATAGEN PART -----
@@ -97,17 +139,24 @@ for i in range(0, 2000):
 test_target = np.array(test_target)
 
 # Training Parameters
-learning_rate = 10
-num_steps = 250
+learning_rate = 100
+#num_steps = 250
+num_steps1 = 1500
+num_steps2 = 50
+num_steps3 = 30
 classifier_steps = 10000
 
 display_step = 25
 
 # Network Parameters
 num_input = 784
-num_hidden_1 = 484
-num_hidden_2 = 256
+num_hidden_1 = 144
+num_hidden_2 = 121
 num_hidden_3 = 100
+
+final_weights = []
+reconstruction_pic = []
+learning_curves = []
 
 # ----- CLASSIFICATION START -----
 training_target = np.array(cls[0:8000])
@@ -147,7 +196,7 @@ print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
 
 
 # ----- SINGLE LAYER START -----
-
+learning_curve = []
 # tf Graph input (only pictures)
 X = tf.placeholder("float", [None, num_input])
 
@@ -209,18 +258,27 @@ with tf.Session() as sess:
 	#print(tf.trainable_variables()[2].eval(sess))
 	
 	# Training
-	for i in range(1, num_steps+1):
+	for i in range(1, num_steps1+1):
 		# Run optimization op (backprop) and cost op (to get loss value)
 		training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
+		learning_curve.append(l)
+
 		# Display logs per step
 		if i % display_step == 0 or i == 1:
 			print('Step %i: Loss: %f' % (i, l))
+			
+	learning_curves.append(learning_curve)
 
 	layer_1_h = tf.trainable_variables()[0].eval(sess)
 	layer_1_b = tf.trainable_variables()[2].eval(sess)
 	
 	training_encoded_output = sess.run(encoder_op, feed_dict={X: training_input})
 	test_encoded_output = sess.run(encoder_op, feed_dict={X: test_input})
+	
+	final_weights.append(tf.trainable_variables()[1].eval(sess))
+	
+	enc1 = np.copy(test_input)
+	dec1 = sess.run(decoder_op, feed_dict={X: test_input})
 
 tf.reset_default_graph()
 
@@ -267,6 +325,7 @@ print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
 
 
 # ----- TWO LAYER START -----
+learning_curve = []
 
 # tf Graph input (only pictures)
 X = tf.placeholder("float", [None, num_input])
@@ -338,19 +397,26 @@ with tf.Session() as sess:
 		print(v)
 	
 	# Training
-	for i in range(1, num_steps+1):
+	for i in range(1, num_steps2+1):
 		# Run optimization op (backprop) and cost op (to get loss value)
 		training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
+		learning_curve.append(l)	
 		# Display logs per step
 		if i % display_step == 0 or i == 1:
 			print('Step %i: Loss: %f' % (i, l))
 
+	learning_curves.append(learning_curve)
+			
 	layer_2_h = tf.trainable_variables()[1].eval(sess)
 	layer_2_b = tf.trainable_variables()[4].eval(sess)
 	
 	training_encoded_output = sess.run(encoder_op, feed_dict={X: training_input})
 	test_encoded_output = sess.run(encoder_op, feed_dict={X: test_input})
 
+	final_weights.append(tf.trainable_variables()[2].eval(sess))
+	enc2 = sess.run(old_op, feed_dict={X: test_input})
+	dec2 = sess.run(decoder_op, feed_dict={X: test_input})
+	
 tf.reset_default_graph()
 
 # ----- CLASSIFICATION START -----
@@ -396,7 +462,7 @@ print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
 
 
 # ----- THREE LAYER START -----
-
+learning_curve = []
 # tf Graph input (only pictures)
 X = tf.placeholder("float", [None, num_input])
 
@@ -469,16 +535,23 @@ with tf.Session() as sess:
 	#print(tf.trainable_variables()[0].eval(sess)[0][0])
 	
 	# Training
-	for i in range(1, num_steps+1):
+	for i in range(1, num_steps3+1):
 		# Run optimization op (backprop) and cost op (to get loss value)
 		training_target, l = sess.run([optimizer, loss], feed_dict={X: training_input})
+		learning_curve.append(l)	
 		# Display logs per step
 		if i % display_step == 0 or i == 1:
 			print('Step %i: Loss: %f' % (i, l))
+			
+	learning_curves.append(learning_curve)
 
 	training_encoded_output = sess.run(encoder_op, feed_dict={X: training_input})
 	test_encoded_output = sess.run(encoder_op, feed_dict={X: test_input})
 
+	final_weights.append(tf.trainable_variables()[3].eval(sess))
+	enc3 = sess.run(old_op, feed_dict={X: test_input})
+	dec3 = sess.run(decoder_op, feed_dict={X: test_input})
+	
 tf.reset_default_graph()
 
 # ----- CLASSIFICATION START -----
@@ -518,3 +591,19 @@ print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
 # ----- CLASSIFICATION END -----
 
 # ----- THREE LAYER END -----
+
+for i in range(0, len(learning_curves)):
+	plt.plot(learning_curves[i])
+
+plt.legend(['1 layer', '2 layer', '3 layer'])
+plt.ylabel('Reconstruction error')
+plt.xlabel('Epochs')
+plt.show()
+
+show_reconstruction(enc1, dec1, int(math.sqrt(num_input)))
+show_reconstruction(enc2, dec2, int(math.sqrt(num_hidden_1)))
+show_reconstruction(enc3, dec3, int(math.sqrt(num_hidden_2)))
+
+#show_weights(final_weights[0])
+#show_weights(final_weights[1])
+#show_weights(final_weights[2])
